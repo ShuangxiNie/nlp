@@ -1,0 +1,1 @@
+from .docx_parser import convert_word2md

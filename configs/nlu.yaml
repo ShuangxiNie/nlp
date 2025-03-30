@@ -1,0 +1,39 @@
+use_llm: True
+
+# LLM 配置
+llm_model: Qwen/QwQ-32B
+base_url: https://api.siliconflow.cn
+api_key: sk-pdyfgbyujilrcwcyajtojrlverjskzghxnjsgxvppbtotdjg
+prompt_examples_file: data/prompt_examples.txt
+
+# 意图定义
+intents:
+  - 询问风格
+  - 询问客照样照 
+  - 询问时间 
+  - 询问价格
+  - 询问活动详情
+  - 询问地址
+  - 询问拍照类型  
+  - 有意向
+  - 主动要微信
+  - 回答地区
+  - 回答需求
+  - 考虑/了解/不需要
+  - 别打电话
+  - 不给联系方式
+  - 售后 
+  - 停止发送
+  - 收到联系方式
+  - 收到空号
+
+# DQU 配置
+intent_config:
+  - model:
+    - name: bert
+  - rule: 
+    - name: no 
+
+slot_config:
+  - location
+  - time
