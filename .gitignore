@@ -1,2 +1,11 @@
 *.pyc
 __pycache__
+*.xlsx
+*.json
+.DS_store
+*.txt
+*.doc
+*.docx
+*.bin
+models
+output.md

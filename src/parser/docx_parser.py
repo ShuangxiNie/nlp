@@ -67,10 +67,6 @@ def convert_word_to_markdown(input_file, output_file, image_dir):
     # os.remove(temp_doc_path)
 
 
-
-
-
-
 if __name__ == "__main__":
     input_file = "data/document.docx"
     output_file = "data/output.md"
