@@ -3,18 +3,19 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, Request, HTTPException
 from FlagEmbedding import BGEM3FlagModel
+from .schema import EmbeddingResponse
 
-emb_router = APIRouter(prefix="/embedding")
+emb_router = APIRouter(prefix="/v1")
 emb_model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=True)
 
 queue = asyncio.Queue()
-executor = ThreadPoolExecutor(max_workers=1)  # 独立线程处理模型推理
+executor = ThreadPoolExecutor(max_workers=2)  # 独立线程处理模型推理
 max_batch_size = 32
 
 async def batch_consumer():
     """消费者协程，处理批量请求"""
     max_batch_size = 32  # 最大批处理大小
-    # timeout = 0.01  # 等待批处理的最大时间（秒）
+    timeout = 0.01  # 等待批处理的最大时间（秒）
     
     while True:
         batch = []
@@ -22,10 +23,10 @@ async def batch_consumer():
             item = await queue.get()
             batch.append(item)
         
-        # # 如果队列为空，等待更多请求
-        # if not batch:
-        #     await asyncio.sleep(timeout)
-        #     continue
+        # 如果队列为空，等待更多请求
+        if not batch:
+            await asyncio.sleep(timeout)
+            continue
         
         # 处理当前批次
         texts = [item["text"] for item in batch]
@@ -48,16 +49,31 @@ async def startup_event():
     asyncio.create_task(batch_consumer())
 
 
-@emb_router.post("/work")
+@emb_router.post("/embeddings")
 async def embedding(request: Request):
     """
     embedding 对外的接口
     """
     data = await request.json()
-
     # 后台异步处理
     future = asyncio.Future()
     await queue.put({"text": data["text"], "future": future})
     embedding = await future
 
-    return {"embedding": embedding}
+    res = {
+        "data": [
+            {
+                "embedding": embedding,
+                "index": 0,
+                "object": "embedding"
+            }
+        ],
+        "model": "text-embedding-ada-002",
+        "object": "list",
+        "usage": {
+            "prompt_tokens": 5,
+            "total_tokens": 5
+        }
+    }
+
+    return res

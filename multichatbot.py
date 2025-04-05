@@ -21,7 +21,10 @@ chatbot1_interface = gr.Interface(
 chatbot2_interface = gr.Interface(
     fn=chatbot2,
     inputs=gr.inputs.Textbox(lines=2, placeholder="Enter your message here..."),
-    outputs="text",
+    outputs=gr.Textbox(
+        lines=8,  # 调整输出框高度
+        label="机器人回复"
+    ),
     title="Chatbot 2",
     description="This is the second chatbot"
 )
