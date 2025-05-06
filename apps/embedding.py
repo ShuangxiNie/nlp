@@ -3,10 +3,20 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, Request, HTTPException
 from FlagEmbedding import BGEM3FlagModel
-from .schema import EmbeddingResponse
+import time
+import logging
+from .schema import EmbeddingResponse, EmbeddingItem, UsageStats
 
+logger = logging.getLogger("embedding")
 emb_router = APIRouter(prefix="/v1")
+
+
+# 初始化模型
+start_time = time.time()
+logger.info(f"BGEM3FlagModel start loading")
 emb_model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=True)
+load_time = time.time() - start_time
+logger.info(f"BGEM3FlagModel loaded finished in {load_time:.2f} seconds")
 
 queue = asyncio.Queue()
 executor = ThreadPoolExecutor(max_workers=2)  # 独立线程处理模型推理
@@ -43,11 +53,6 @@ async def batch_consumer():
         for future, emb in zip(futures, dense_vecs):
             future.set_result(emb.tolist())  
 
- 
-@emb_router.on_event("startup")
-async def startup_event():
-    asyncio.create_task(batch_consumer())
-
 
 @emb_router.post("/embeddings")
 async def embedding(request: Request):
@@ -60,20 +65,8 @@ async def embedding(request: Request):
     await queue.put({"text": data["text"], "future": future})
     embedding = await future
 
-    res = {
-        "data": [
-            {
-                "embedding": embedding,
-                "index": 0,
-                "object": "embedding"
-            }
-        ],
-        "model": "text-embedding-ada-002",
-        "object": "list",
-        "usage": {
-            "prompt_tokens": 5,
-            "total_tokens": 5
-        }
-    }
+    embedding_response = EmbeddingResponse(data=[EmbeddingItem(embedding=embedding, index=0)], 
+                             object="list", 
+                             usage=UsageStats(prompt_tokens=5, total_tokens=5))
 
-    return res
+    return embedding_response.model_dump()
